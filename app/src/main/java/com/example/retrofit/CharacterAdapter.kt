@@ -1,126 +1,92 @@
 package com.example.retrofit
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
-class CharacterAdapter(private val characterList: MutableList<Character>) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class CharacterAdapter(private val characters: List<Character>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val VIEW_TYPE_IMAGE = 1
-    private val VIEW_TYPE_NAME = 2
-    private val VIEW_TYPE_SPECIES = 3
-
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(RickAndMortyApiService.BASE_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-    
-    private val rickAndMortyApiService = retrofit.create(RickAndMortyApiService::class.java)
+    companion object {
+        private const val VIEW_TYPE_IMAGE = 1
+        private const val VIEW_TYPE_NAME = 2
+        private const val VIEW_TYPE_TYPE = 3
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
-            VIEW_TYPE_IMAGE -> CharacterImageViewHolder(
-                LayoutInflater.from(parent.context)
-                    .inflate(R.layout.character_image, parent, false)
-            )
-            VIEW_TYPE_NAME -> CharacterNameViewHolder(
-                LayoutInflater.from(parent.context)
-                    .inflate(R.layout.character_name, parent, false)
-            )
-            VIEW_TYPE_SPECIES -> CharacterSpeciesViewHolder(
-                LayoutInflater.from(parent.context)
-                    .inflate(R.layout.character_species, parent, false)
-            )
+            VIEW_TYPE_IMAGE -> {
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_image, parent, false)
+                ImageViewHolder(view)
+            }
+            VIEW_TYPE_NAME -> {
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_name, parent, false)
+                NameViewHolder(view)
+            }
+            VIEW_TYPE_TYPE -> {
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_species, parent, false)
+                TypeViewHolder(view)
+            }
             else -> throw IllegalArgumentException("Invalid view type")
         }
     }
 
-    override fun getItemViewType(position: Int): Int {
-        val characterType = characterList[position].getType()
-        return when (characterType) {
-            "image" -> VIEW_TYPE_IMAGE
-            "name" -> VIEW_TYPE_NAME
-            else -> VIEW_TYPE_SPECIES
-        }
-    }
-
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val character = characterList[position]
-        when (holder) {
-            is CharacterImageViewHolder -> {
-                Picasso.get().load(character.image).into(holder.imageView)
+        val character = characters[position]
+
+        when (holder.itemViewType) {
+            VIEW_TYPE_IMAGE -> {
+                (holder as ImageViewHolder).bind(character.image)
             }
-            is CharacterNameViewHolder -> {
-                holder.nameTextView.text = character.name
+            VIEW_TYPE_NAME -> {
+                (holder as NameViewHolder).bind(character.name)
             }
-            is CharacterSpeciesViewHolder -> {
-                holder.speciesTextView.text = character.species
+            VIEW_TYPE_TYPE -> {
+                (holder as TypeViewHolder).bind(character.type)
             }
         }
     }
 
     override fun getItemCount(): Int {
-        return characterList.size
+        return characters.size
     }
 
-    class CharacterImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imageView: ImageView = itemView.findViewById(R.id.imageView)
+    override fun getItemViewType(position: Int): Int {
+        val character = characters[position]
+        return when {
+            character.species == "Human" -> VIEW_TYPE_IMAGE
+            character.species == "Alien" -> VIEW_TYPE_NAME
+            else -> VIEW_TYPE_TYPE
+        }
     }
 
-    class CharacterNameViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val nameTextView: TextView = itemView.findViewById(R.id.nameTextView)
-    }
+    inner class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imageView: ImageView = itemView.findViewById(R.id.imageView)
 
-    class CharacterSpeciesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val speciesTextView: TextView = itemView.findViewById(R.id.speciesTextView)
-    }
-
-    // Метод для загрузки данных с помощью Retrofit
-    fun loadData() {
-        val call = rickAndMortyApiService.getCharacters()
-
-        call.enqueue(object : Callback<List<CharacterResponse>> {
-            override fun onResponse(
-                call: Call<List<CharacterResponse>>,
-                response: Response<List<CharacterResponse>>
-            ) {
-                if (response.isSuccessful) {
-                    val characters = response.body()
-                    characters?.let {
-                        // Очищаем старые данные
-                        characterList.clear()
-                        // Добавляем новые данные
-                        for (characterResponse in characters) {
-                            characterList.add(
-                                Character(
-                                    characterResponse.id,
-                                    characterResponse.name,
-                                    characterResponse.species,
-                                    characterResponse.image
-                                )
-                            )
-                        }
-                        // Уведомляем адаптер об изменениях
-                        notifyDataSetChanged()
-                    }
-                } else {
-                    // Обработка неуспешного ответа (например, код ответа не 200)
-                }
+        fun bind(image: String?) {
+            if (!image.isNullOrEmpty()) {
+                Picasso.get().load(image).into(imageView)
             }
+        }
+    }
 
-            override fun onFailure(call: Call<List<CharacterResponse>>, t: Throwable) {
-                // Обработка ошибки загрузки данных
-            }
-        })
+    inner class NameViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val nameTextView: TextView = itemView.findViewById(R.id.nameTextView)
+
+        fun bind(name: String) {
+            nameTextView.text = name
+        }
+    }
+
+    inner class TypeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val typeTextView: TextView = itemView.findViewById(R.id.speciesTextView)
+
+        fun bind(type: String) {
+            typeTextView.text = type
+        }
     }
 }
+
