@@ -16,40 +16,7 @@ class CharacterAdapter(private val characters: List<Character>) : RecyclerView.A
         private const val VIEW_TYPE_TYPE = 3
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when (viewType) {
-            VIEW_TYPE_IMAGE -> {
-                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_image, parent, false)
-                ImageViewHolder(view)
-            }
-            VIEW_TYPE_NAME -> {
-                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_name, parent, false)
-                NameViewHolder(view)
-            }
-            VIEW_TYPE_TYPE -> {
-                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_species, parent, false)
-                TypeViewHolder(view)
-            }
-            else -> throw IllegalArgumentException("Invalid view type")
-        }
-    }
-
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val character = characters[position]
-
-        when (holder.itemViewType) {
-            VIEW_TYPE_IMAGE -> {
-                (holder as ImageViewHolder).bind(character.image)
-            }
-            VIEW_TYPE_NAME -> {
-                (holder as NameViewHolder).bind(character.name)
-            }
-            VIEW_TYPE_TYPE -> {
-                (holder as TypeViewHolder).bind(character.type)
-            }
-        }
-    }
-
+    // Получение общего количества элементов в списке персонажей
     override fun getItemCount(): Int {
         return characters.size
     }
@@ -63,9 +30,50 @@ class CharacterAdapter(private val characters: List<Character>) : RecyclerView.A
         }
     }
 
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_IMAGE -> {
+                //используем LayoutInflater, чтобы создать новое представление (View) из макета (layout) R.layout.character_image
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_image, parent, false)
+
+                // Создаем новый экземпляр класса ImageViewHolder и передаем созданное представление в конструктор.
+                ImageViewHolder(view)
+            }
+            VIEW_TYPE_NAME -> {
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_name, parent, false)
+                NameViewHolder(view)
+            }
+            VIEW_TYPE_TYPE -> {
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.character_species, parent, false)
+                TypeViewHolder(view)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+            // Если тип представления недопустим, выбрасывается исключение.
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        // Получаем данные о персонаже из списка characters для указанной позиции.
+        val character = characters[position]
+
+        when (holder.itemViewType) {
+            // Приводим holder к типу ImageViewHolder и вызываем метод bind, передавая ему URL
+            VIEW_TYPE_IMAGE -> {
+                (holder as ImageViewHolder).bind(character.image)
+            }
+            VIEW_TYPE_NAME -> {
+                (holder as NameViewHolder).bind(character.name)
+            }
+            VIEW_TYPE_TYPE -> {
+                (holder as TypeViewHolder).bind(character.type)
+            }
+        }
+    }
+
     inner class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val imageView: ImageView = itemView.findViewById(R.id.imageView)
 
+        // Метод bind, который используется для привязки изображения к ImageView.
         fun bind(image: String?) {
             if (!image.isNullOrEmpty()) {
                 Picasso.get().load(image).into(imageView)
